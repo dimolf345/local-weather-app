@@ -1,41 +1,27 @@
-import { CommonModule } from '@angular/common'
-import { Component } from '@angular/core'
-import { effect } from '@angular/core'
-import { FlexModule } from '@ngbracket/ngx-layout'
-import { select, Store } from '@ngrx/store'
-import { merge, Observable } from 'rxjs'
+import { DatePipe, DecimalPipe } from '@angular/common'
+import { Component, OnInit } from '@angular/core'
+import { FlexModule } from '@ngbracket/ngx-layout/flex'
 
 import { ICurrentWeather } from '../interfaces'
-import * as appStore from '../reducers'
 import { WeatherService } from '../weather/weather.service'
 
 @Component({
   selector: 'app-current-weather',
-  standalone: true,
-  imports: [CommonModule, FlexModule],
   templateUrl: './current-weather.component.html',
   styleUrls: ['./current-weather.component.css'],
+  standalone: true,
+  imports: [FlexModule, DecimalPipe, DatePipe],
 })
-export class CurrentWeatherComponent {
-  usingSignal = true
-  current: ICurrentWeather | null = null
-  current$: Observable<ICurrentWeather>
+export class CurrentWeatherComponent implements OnInit {
+  constructor(private weatherService: WeatherService) {}
+  current!: ICurrentWeather
 
-  constructor(
-    private weatherService: WeatherService,
-    private store: Store<appStore.State>
-  ) {
-    this.current$ = merge(
-      this.store.pipe(select(appStore.selectCurrentWeather)),
-      this.weatherService.currentWeather$
-    )
-    effect(() => {
-      this.usingSignal = this.weatherService.reactivityMode() === 'signal'
-      this.current = this.weatherService.currentWeatherSignal()
-    })
+  ngOnInit(): void {
+    this.weatherService
+      .getCurrentWeather('Bethesda', 'US')
+      .subscribe((data) => (this.current = data))
   }
 
-  // Attribution: https://stackoverflow.com/a/44418732/178620
   getOrdinal(date: number) {
     const n = new Date(date).getDate()
     return n > 0

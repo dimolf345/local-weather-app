@@ -1,63 +1,29 @@
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing'
 import { By } from '@angular/platform-browser'
-import { Store } from '@ngrx/store'
-import { MockStore, provideMockStore } from '@ngrx/store/testing'
-import {
-  addProperty,
-  autoSpyObj,
-  injectSpy,
-  ObservablePropertyStrategy,
-} from 'angular-unit-test-helper'
-import { first, of } from 'rxjs'
+import { injectSpy } from 'angular-unit-test-helper'
+import { of } from 'rxjs'
 
-import { ICurrentWeather } from '../interfaces'
-import { defaultWeather, WeatherService } from '../weather/weather.service'
+import { WeatherService } from '../weather/weather.service'
 import { fakeWeather } from '../weather/weather.service.fake'
 import { CurrentWeatherComponent } from './current-weather.component'
-
-/* eslint-disable-next-line arrow-body-style */
-export const spyGetter = <T, K extends keyof T>(
-  target: jasmine.SpyObj<T>,
-  key: K
-): jasmine.Spy => {
-  return Object.getOwnPropertyDescriptor(target, key)?.get as jasmine.Spy
-}
-
-/* eslint-disable-next-line arrow-body-style */
-export const spySetter = <T, K extends keyof T>(
-  target: jasmine.SpyObj<T>,
-  key: K
-): jasmine.Spy => {
-  return Object.getOwnPropertyDescriptor(target, key)?.set as jasmine.Spy
-}
 
 describe('CurrentWeatherComponent', () => {
   let component: CurrentWeatherComponent
   let fixture: ComponentFixture<CurrentWeatherComponent>
   let weatherServiceMock: jasmine.SpyObj<WeatherService>
-  let store: MockStore<{ search: { current: ICurrentWeather } }>
-  const initialState = { search: { current: defaultWeather } }
 
   beforeEach(waitForAsync(() => {
-    const weatherServiceSpy = autoSpyObj(
-      WeatherService,
-      ['currentWeather$'],
-      ObservablePropertyStrategy.BehaviorSubject
-    )
-
-    addProperty(weatherServiceSpy, 'reactivityMode', () => 'subject')
-    addProperty(weatherServiceSpy, 'currentWeatherSignal', () => fakeWeather)
+    const weatherServiceSpy = jasmine.createSpyObj('WeatherService', [
+      'getCurrentWeather',
+    ])
 
     TestBed.configureTestingModule({
       imports: [CurrentWeatherComponent],
-      providers: [
-        { provide: WeatherService, useValue: weatherServiceSpy },
-        provideMockStore({ initialState }),
-      ],
+      providers: [{ provide: WeatherService, useValue: weatherServiceSpy }],
     }).compileComponents()
 
+    // weatherServiceMock = TestBed.inject(WeatherService) as any
     weatherServiceMock = injectSpy(WeatherService)
-    store = TestBed.inject(Store) as MockStore<{ search: { current: ICurrentWeather } }>
   }))
 
   beforeEach(() => {
@@ -76,26 +42,32 @@ describe('CurrentWeatherComponent', () => {
     expect(component).toBeTruthy()
   })
 
-  it('should get currentWeather from weatherService', (done) => {
+  it('should get currentWeather from weatherService', () => {
     // Arrange
-    store.setState({ search: { current: fakeWeather } })
-    weatherServiceMock.currentWeather$.next(fakeWeather)
+    weatherServiceMock.getCurrentWeather.and.returnValue(of())
 
     // Act
     fixture.detectChanges() // triggers ngOnInit()
 
     // Assert
-    expect(component.current$).toBeDefined()
+    expect(weatherServiceMock.getCurrentWeather).toHaveBeenCalledTimes(1)
+  })
 
-    component.current$.pipe(first()).subscribe((current) => {
-      expect(current.city).toEqual('Bethesda')
-      expect(current.temperature).toEqual(280.32)
+  it('should eagerly load currentWeather in Bethesda from weatherService', () => {
+    // Arrange
+    weatherServiceMock.getCurrentWeather.and.returnValue(of(fakeWeather))
 
-      // Assert on DOM
-      const debugEl = fixture.debugElement
-      const titleEl: HTMLElement = debugEl.query(By.css('.mat-headline-6')).nativeElement
-      expect(titleEl.textContent).toContain('Bethesda')
-      done()
-    })
+    // Act
+    fixture.detectChanges() // triggers ngOnInit()
+
+    // Assert
+    expect(component.current).toBeDefined()
+    expect(component.current.city).toEqual('Bethesda')
+    expect(component.current.temperature).toEqual(280.32)
+
+    // Assert on DOM
+    const debugEl = fixture.debugElement
+    const titleEl: HTMLElement = debugEl.query(By.css('.mat-headline-6')).nativeElement
+    expect(titleEl.textContent).toContain('Bethesda')
   })
 })
