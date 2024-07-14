@@ -1,4 +1,4 @@
-@if (current) {
+@if (current$ | async; as current) {
   <div>
     <div fxLayout="row">
       <div fxFlex="66%" class="mat-headline-6 no-margin">
@@ -29,6 +29,4 @@
       </div>
     </div>
   </div>
-} @else {
-  <div>no data</div>
 }
