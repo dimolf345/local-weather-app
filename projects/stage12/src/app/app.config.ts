@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http'
+import { provideHttpClient, withFetch } from '@angular/common/http'
 import { ApplicationConfig } from '@angular/core'
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async'
 import { provideEffects } from '@ngrx/effects'
@@ -12,7 +12,7 @@ import { metaReducers, reducers } from './reducers'
 export const appConfig: ApplicationConfig = {
   providers: [
     provideAnimationsAsync(),
-    provideHttpClient(),
+    provideHttpClient(withFetch()),
     provideEffects(CurrentWeatherEffects),
     provideStore(reducers, {
       metaReducers,

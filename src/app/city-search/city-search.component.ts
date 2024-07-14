@@ -41,7 +41,7 @@ export class CitySearchComponent {
   doSearch(searchValue: string) {
     const userInput = searchValue.split(',').map((v) => v.trim())
     const searchText = userInput[0]
-    const country = userInput.length > 1 ? userInput[1] : undefined
+    const country = userInput.length > 1 ? userInput[1] : ''
     this.weatherService.updateCurrentWeather(searchText, country)
   }
 }
